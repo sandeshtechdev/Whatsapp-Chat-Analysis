@@ -1,22 +1,12 @@
-# import streamlit as st
-
-# st.title("WhatsApp Chat Analyzer")
-
-# # uploader in the sidebar, only .txt files allowed
-# uploaded_file = st.sidebar.file_uploader("Choose a WhatsApp chat file", type=["txt"])
-
-# if uploaded_file is not None:
-#     bytes_data = uploaded_file.getvalue()        # read file as bytes
-#     data = bytes_data.decode("utf-8")            # convert bytes to text
-#     st.text(data)
-
 
 import streamlit as st
 import matplotlib.pyplot as plt
+import seaborn as sns
 import preprocessor
 import helper
 
 st.set_page_config(page_title="WhatsApp Chat Analyzer", layout="wide")
+sns.set_theme(style='whitegrid', palette='deep', context='notebook')
 st.title("📊 WhatsApp Chat Analyzer")
 
 uploaded_file = st.sidebar.file_uploader("📂 Upload a WhatsApp chat", type=["txt"])
@@ -58,11 +48,20 @@ if uploaded_file is not None:
         if timeline.empty:
             st.info("No participant messages are available for this timeline.")
         else:
-            fig, ax = plt.subplots()
-            ax.plot(timeline['time'], timeline['message'], color='green', marker='o')
+            fig, ax = plt.subplots(figsize=(11, 4))
+            sns.lineplot(
+                data=timeline,
+                x='time',
+                y='message',
+                marker='o',
+                linewidth=2.5,
+                color=sns.color_palette('deep')[2],
+                ax=ax,
+            )
             ax.set_xlabel("Month")
             ax.set_ylabel("Messages")
-            plt.xticks(rotation='vertical')
+            ax.tick_params(axis='x', labelrotation=45)
+            fig.tight_layout()
             st.pyplot(fig)
             busiest_month = timeline.loc[timeline['message'].idxmax()]
             quietest_month = timeline.loc[timeline['message'].idxmin()]
@@ -91,10 +90,19 @@ if uploaded_file is not None:
         if yearly.empty:
             st.info("No participant messages are available for this timeline.")
         else:
-            fig, ax = plt.subplots()
-            ax.bar(yearly['year'].astype(str), yearly['message'], color='royalblue')
+            yearly_chart = yearly.assign(year=yearly['year'].astype(str))
+            fig, ax = plt.subplots(figsize=(9, 4))
+            sns.barplot(
+                data=yearly_chart,
+                x='year',
+                y='message',
+                color=sns.color_palette('deep')[0],
+                ax=ax,
+            )
             ax.set_xlabel("Year")
             ax.set_ylabel("Messages")
+            ax.bar_label(ax.containers[0], fmt='%.0f', padding=3)
+            fig.tight_layout()
             st.pyplot(fig)
             st.dataframe(
                 yearly.rename(columns={'message': 'messages'}),
@@ -105,10 +113,23 @@ if uploaded_file is not None:
         # ---------- 3. Daily timeline ----------
         st.header("📈 Daily Messages")
         daily = helper.daily_timeline(selected_user, df)
-        fig, ax = plt.subplots()
-        ax.plot(daily['only_date'], daily['message'], color='black')
-        plt.xticks(rotation='vertical')
-        st.pyplot(fig)
+        if daily.empty:
+            st.info("No participant messages are available for this timeline.")
+        else:
+            fig, ax = plt.subplots(figsize=(11, 4))
+            sns.lineplot(
+                data=daily,
+                x='only_date',
+                y='message',
+                linewidth=1.8,
+                color=sns.color_palette('deep')[1],
+                ax=ax,
+            )
+            ax.set_xlabel("Date")
+            ax.set_ylabel("Messages")
+            ax.tick_params(axis='x', labelrotation=45)
+            fig.tight_layout()
+            st.pyplot(fig)
 
         # ---------- 4. Activity map ----------
         st.header("🔥 Activity Insights")
@@ -116,23 +137,57 @@ if uploaded_file is not None:
         with col1:
             st.subheader("📆 Busiest Day")
             busy_day = helper.week_activity(selected_user, df)
-            fig, ax = plt.subplots()
-            ax.bar(busy_day.index, busy_day.values, color='purple')
-            plt.xticks(rotation='vertical')
-            st.pyplot(fig)
+            if busy_day.empty:
+                st.info("No participant activity is available for this chart.")
+            else:
+                fig, ax = plt.subplots(figsize=(6, 4))
+                sns.barplot(
+                    x=busy_day.index,
+                    y=busy_day.values,
+                    color=sns.color_palette('deep')[4],
+                    ax=ax,
+                )
+                ax.set_xlabel("Weekday")
+                ax.set_ylabel("Messages")
+                ax.tick_params(axis='x', labelrotation=30)
+                fig.tight_layout()
+                st.pyplot(fig)
         with col2:
             st.subheader("🗓️ Most Active Month")
             busy_month = helper.month_activity(selected_user, df)
-            fig, ax = plt.subplots()
-            ax.bar(busy_month.index, busy_month.values, color='orange')
-            plt.xticks(rotation='vertical')
-            st.pyplot(fig)
+            if busy_month.empty:
+                st.info("No participant activity is available for this chart.")
+            else:
+                fig, ax = plt.subplots(figsize=(6, 4))
+                sns.barplot(
+                    x=busy_month.index,
+                    y=busy_month.values,
+                    color=sns.color_palette('deep')[1],
+                    ax=ax,
+                )
+                ax.set_xlabel("Month")
+                ax.set_ylabel("Messages")
+                ax.tick_params(axis='x', labelrotation=30)
+                fig.tight_layout()
+                st.pyplot(fig)
 
         st.subheader("⏰ Messages by Hour")
         hours = helper.hour_activity(selected_user, df)
-        fig, ax = plt.subplots()
-        ax.bar(hours.index, hours.values, color='teal')
-        st.pyplot(fig)
+        if hours.empty:
+            st.info("No participant activity is available for this chart.")
+        else:
+            fig, ax = plt.subplots(figsize=(11, 4))
+            sns.barplot(
+                x=hours.index.astype(str),
+                y=hours.values,
+                color=sns.color_palette('deep')[2],
+                ax=ax,
+            )
+            ax.set_xlabel("Hour of day")
+            ax.set_ylabel("Messages")
+            ax.bar_label(ax.containers[0], fmt='%.0f', padding=2)
+            fig.tight_layout()
+            st.pyplot(fig)
 
         # ---------- 5. Busiest users (only for Overall) ----------
         if selected_user == 'Overall':
@@ -164,29 +219,63 @@ if uploaded_file is not None:
                 )
 
             x, percent_df = helper.most_busy_users(df)
-            col1, col2 = st.columns(2)
-            with col1:
-                fig, ax = plt.subplots()
-                ax.bar(x.index, x.values, color='red')
-                plt.xticks(rotation='vertical')
+            if x.empty:
+                st.info("No participant messages are available for the charts.")
+            else:
+                top_users = x.sort_values().rename_axis('user').reset_index(
+                    name='messages'
+                )
+                fig, ax = plt.subplots(
+                    figsize=(10, max(4, 0.42 * len(top_users) + 1))
+                )
+                sns.barplot(
+                    data=top_users,
+                    x='messages',
+                    y='user',
+                    color=sns.color_palette('deep')[3],
+                    ax=ax,
+                )
+                ax.set_title("Top participants by message count")
+                ax.set_xlabel("Messages")
+                ax.set_ylabel("")
+                ax.bar_label(ax.containers[0], fmt='%.0f', padding=4)
+                fig.tight_layout()
                 st.pyplot(fig)
-            with col2:
-                user_counts = df.loc[
-                    df['user'] != 'group_notification', 'user'
-                ].value_counts()
-                if user_counts.empty:
-                    st.info("No participant messages are available for the pie chart.")
-                else:
-                    fig, ax = plt.subplots()
-                    ax.pie(
-                        user_counts.values,
-                        labels=user_counts.index,
-                        autopct='%1.1f%%',
-                        startangle=90,
-                    )
-                    ax.axis('equal')
-                    st.pyplot(fig)
-            st.caption("📋 Share of messages by user")
+
+            user_counts = df.loc[
+                df['user'] != 'group_notification', 'user'
+            ].value_counts()
+            if user_counts.empty:
+                st.info("No participant message shares are available to chart.")
+            else:
+                shares = user_counts / user_counts.sum() * 100
+                visible_labels = [
+                    user if percent >= 3 else ''
+                    for user, percent in shares.items()
+                ]
+                fig, ax = plt.subplots(figsize=(10, 7))
+                ax.pie(
+                    user_counts.values,
+                    labels=visible_labels,
+                    startangle=90,
+                    autopct=lambda percent: (
+                        f'{percent:.1f}%' if percent >= 3 else ''
+                    ),
+                    labeldistance=1.08,
+                    pctdistance=0.68,
+                    colors=sns.color_palette('pastel', n_colors=len(user_counts)),
+                    wedgeprops={'edgecolor': 'white', 'linewidth': 1.5},
+                )
+                ax.set_title("Message share by participant")
+                ax.axis('equal')
+                fig.tight_layout()
+                st.pyplot(fig)
+
+            st.caption(
+                "To prevent overlap, names and percentages are shown only for "
+                "slices of 3% or more; the table includes every participant."
+            )
+            st.caption("📋 Message share for all participants")
             st.dataframe(percent_df)
 
         # ---------- 6. Emoji insights ----------
@@ -201,6 +290,24 @@ if uploaded_file is not None:
                 column.metric(str(row['emoji']), f"{int(row['count']):,}")
             st.caption("📊 Complete emoji count for this selection")
             st.dataframe(emoji_df, use_container_width=True, hide_index=True)
+
+        if selected_user == 'Overall':
+            st.subheader("😀 Emoji counts by participant")
+            participant_emojis = helper.participant_emoji_counts(df)
+            if participant_emojis.empty:
+                st.info("No emojis found in participant messages.")
+            else:
+                st.dataframe(
+                    participant_emojis.rename(
+                        columns={
+                            'user': 'participant',
+                            'emoji': 'emoji',
+                            'count': 'times sent',
+                        }
+                    ),
+                    use_container_width=True,
+                    hide_index=True,
+                )
 
         # ---------- 7. Word cloud ----------
         st.header("☁️ Word Cloud")

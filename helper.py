@@ -57,6 +57,30 @@ def most_common_emojis(selected_user, df):
     return pd.DataFrame(emoji_counts.most_common(), columns=['emoji', 'count'])
 
 
+def participant_emoji_counts(df):
+    messages = df.loc[
+        df['user'] != 'group_notification',
+        ['user', 'message'],
+    ].dropna(subset=['message'])
+    emoji_counts = Counter(
+        (user, emoji)
+        for user, message in messages.itertuples(index=False, name=None)
+        for emoji in EMOJI_PATTERN.findall(message)
+    )
+    result = pd.DataFrame(
+        [
+            {'user': user, 'emoji': emoji, 'count': count}
+            for (user, emoji), count in emoji_counts.items()
+        ],
+        columns=['user', 'emoji', 'count'],
+    )
+    return result.sort_values(
+        ['user', 'count', 'emoji'],
+        ascending=[True, False, True],
+        ignore_index=True,
+    )
+
+
 def chat_summary(selected_user, df):
     if selected_user != 'Overall':
         df = df[df['user'] == selected_user]

@@ -13,7 +13,9 @@ choose **Overall** or a participant, and select **Show Analysis**.
 - Daily, weekday, month, and hour activity charts
 - Group-member performance table with message share, words, media, links,
   active days, and average messages per active day
-- Participant message-share pie chart
+- Participant message-share pie chart with labels on larger slices and a
+  complete participant-share table
+- Per-participant emoji breakdown with the emoji and number of times sent
 - Emoji counts, word cloud, and common-word table
 
 ## Requirements
@@ -22,8 +24,8 @@ choose **Overall** or a participant, and select **Show Analysis**.
 - Packages listed in [`requirements.txt`](requirements.txt)
 
 The app uses Streamlit for the interface, pandas for parsing and analysis,
-Matplotlib for charts, `regex` for Unicode emoji matching, and WordCloud for
-the word-cloud visualization.
+Matplotlib and Seaborn for charts and styling, `regex` for Unicode emoji
+matching, and WordCloud for the word-cloud visualization.
 
 ## Install and run
 

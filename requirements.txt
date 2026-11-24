@@ -1,5 +1,6 @@
 matplotlib
 pandas
 regex
+seaborn
 streamlit
 wordcloud
