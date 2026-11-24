@@ -55,10 +55,52 @@ if uploaded_file is not None:
         # ---------- 2. Monthly timeline ----------
         st.header("📅 Monthly Messages")
         timeline = helper.monthly_timeline(selected_user, df)
-        fig, ax = plt.subplots()
-        ax.plot(timeline['time'], timeline['message'], color='green')
-        plt.xticks(rotation='vertical')
-        st.pyplot(fig)
+        if timeline.empty:
+            st.info("No participant messages are available for this timeline.")
+        else:
+            fig, ax = plt.subplots()
+            ax.plot(timeline['time'], timeline['message'], color='green', marker='o')
+            ax.set_xlabel("Month")
+            ax.set_ylabel("Messages")
+            plt.xticks(rotation='vertical')
+            st.pyplot(fig)
+            busiest_month = timeline.loc[timeline['message'].idxmax()]
+            quietest_month = timeline.loc[timeline['message'].idxmin()]
+            col1, col2 = st.columns(2)
+            col1.metric(
+                "Most active month",
+                busiest_month['time'],
+                f"{int(busiest_month['message']):,} messages",
+            )
+            col2.metric(
+                "Least active month",
+                quietest_month['time'],
+                f"{int(quietest_month['message']):,} messages",
+            )
+            st.caption("Monthly message counts (months with participant messages)")
+            st.dataframe(
+                timeline[['time', 'message']].rename(
+                    columns={'time': 'month', 'message': 'messages'}
+                ),
+                use_container_width=True,
+                hide_index=True,
+            )
+
+        st.subheader("📆 Messages by Year")
+        yearly = helper.yearly_timeline(selected_user, df)
+        if yearly.empty:
+            st.info("No participant messages are available for this timeline.")
+        else:
+            fig, ax = plt.subplots()
+            ax.bar(yearly['year'].astype(str), yearly['message'], color='royalblue')
+            ax.set_xlabel("Year")
+            ax.set_ylabel("Messages")
+            st.pyplot(fig)
+            st.dataframe(
+                yearly.rename(columns={'message': 'messages'}),
+                use_container_width=True,
+                hide_index=True,
+            )
 
         # ---------- 3. Daily timeline ----------
         st.header("📈 Daily Messages")
@@ -95,6 +137,32 @@ if uploaded_file is not None:
         # ---------- 5. Busiest users (only for Overall) ----------
         if selected_user == 'Overall':
             st.header("🏆 Most Active Users")
+            performance = helper.participant_performance(df)
+            if performance.empty:
+                st.info("No participant messages are available for group performance.")
+            else:
+                st.subheader("👥 Group Member Performance")
+                st.caption(
+                    "Compare message and word counts, shared media and links, "
+                    "active days, and each member's share of participant messages."
+                )
+                st.dataframe(
+                    performance.rename(
+                        columns={
+                            'user': 'participant',
+                            'messages': 'messages',
+                            'message_share_percent': 'message share (%)',
+                            'words': 'words',
+                            'media': 'media shared',
+                            'links': 'links shared',
+                            'active_days': 'active days',
+                            'avg_messages_per_active_day': 'messages per active day',
+                        }
+                    ),
+                    use_container_width=True,
+                    hide_index=True,
+                )
+
             x, percent_df = helper.most_busy_users(df)
             col1, col2 = st.columns(2)
             with col1:

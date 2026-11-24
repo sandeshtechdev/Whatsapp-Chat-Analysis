@@ -8,7 +8,11 @@ choose **Overall** or a participant, and select **Show Analysis**.
 - Message, word, media, and link counts
 - Chat summary with date range, active days, busiest weekdays, top participant,
   and most-used emoji
-- Monthly, daily, weekday, month, and hour activity charts
+- Monthly and yearly message timelines with the busiest and quietest active
+  month summaries
+- Daily, weekday, month, and hour activity charts
+- Group-member performance table with message share, words, media, links,
+  active days, and average messages per active day
 - Participant message-share pie chart
 - Emoji counts, word cloud, and common-word table
 

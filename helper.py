@@ -13,9 +13,15 @@ EMOJI_PATTERN = unicode_regex.compile(
 )
 
 
-def fetch_stats(selected_user, df):
+def _participant_messages(selected_user, df):
+    messages = df[df['user'] != 'group_notification']
     if selected_user != 'Overall':
-        df = df[df['user'] == selected_user]
+        messages = messages[messages['user'] == selected_user]
+    return messages
+
+
+def fetch_stats(selected_user, df):
+    df = _participant_messages(selected_user, df)
 
     num_messages = df.shape[0]
     words = []
@@ -125,32 +131,84 @@ def most_common_words(selected_user, df):
 
 
 def monthly_timeline(selected_user, df):
-    if selected_user != 'Overall':
-        df = df[df['user'] == selected_user]
-    timeline = df.groupby(['year', 'month_num', 'month']).count()['message'].reset_index()
+    messages = _participant_messages(selected_user, df)
+    timeline = (
+        messages.groupby(['year', 'month_num', 'month'])
+        .size()
+        .reset_index(name='message')
+    )
     timeline['time'] = timeline['month'] + '-' + timeline['year'].astype(str)
     return timeline
 
 
+def yearly_timeline(selected_user, df):
+    messages = _participant_messages(selected_user, df)
+    return messages.groupby('year').size().reset_index(name='message')
+
+
+def participant_performance(df):
+    columns = [
+        'user',
+        'messages',
+        'message_share_percent',
+        'words',
+        'media',
+        'links',
+        'active_days',
+        'avg_messages_per_active_day',
+    ]
+    messages = df[df['user'] != 'group_notification'].copy()
+    if messages.empty:
+        return pd.DataFrame(columns=columns)
+
+    word_messages = messages['message'].fillna('').where(
+        messages['message'] != '<Media omitted>',
+        '',
+    )
+    messages['words'] = word_messages.str.split().str.len()
+    messages['media'] = messages['message'].eq('<Media omitted>').astype(int)
+    messages['links'] = messages['message'].fillna('').map(
+        lambda message: len(re.findall(r'http[s]?://\S+', message))
+    )
+
+    performance = (
+        messages.groupby('user')
+        .agg(
+            messages=('message', 'size'),
+            words=('words', 'sum'),
+            media=('media', 'sum'),
+            links=('links', 'sum'),
+            active_days=('only_date', 'nunique'),
+        )
+        .reset_index()
+    )
+    total_messages = performance['messages'].sum()
+    performance['message_share_percent'] = (
+        performance['messages'] / total_messages * 100
+    ).round(2)
+    performance['avg_messages_per_active_day'] = (
+        performance['messages'] / performance['active_days']
+    ).round(2)
+    return performance[columns].sort_values(
+        'messages', ascending=False, ignore_index=True
+    )
+
+
 def daily_timeline(selected_user, df):
-    if selected_user != 'Overall':
-        df = df[df['user'] == selected_user]
-    return df.groupby('only_date').count()['message'].reset_index()
+    messages = _participant_messages(selected_user, df)
+    return messages.groupby('only_date').size().reset_index(name='message')
 
 
 def week_activity(selected_user, df):
-    if selected_user != 'Overall':
-        df = df[df['user'] == selected_user]
-    return df['day_name'].value_counts()
+    messages = _participant_messages(selected_user, df)
+    return messages['day_name'].value_counts()
 
 
 def month_activity(selected_user, df):
-    if selected_user != 'Overall':
-        df = df[df['user'] == selected_user]
-    return df['month'].value_counts()
+    messages = _participant_messages(selected_user, df)
+    return messages['month'].value_counts()
 
 
 def hour_activity(selected_user, df):
-    if selected_user != 'Overall':
-        df = df[df['user'] == selected_user]
-    return df['hour'].value_counts().sort_index()
+    messages = _participant_messages(selected_user, df)
+    return messages['hour'].value_counts().sort_index()
