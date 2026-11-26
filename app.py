@@ -4,17 +4,436 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import preprocessor
 import helper
+import extras
+import ml
+import pages
+import theme
 
-st.set_page_config(page_title="WhatsApp Chat Analyzer", layout="wide")
-sns.set_theme(style='whitegrid', palette='deep', context='notebook')
-st.title("📊 WhatsApp Chat Analyzer")
+UPLOAD_LIMIT_HELP = (
+    "Maximum upload: 200 MB per .txt file. Split larger exports before uploading."
+)
 
-uploaded_file = st.sidebar.file_uploader("📂 Upload a WhatsApp chat", type=["txt"])
+st.set_page_config(
+    page_title="ChatLens",
+    page_icon="💬",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+sns.set_theme(
+    style="darkgrid",
+    palette=["#25d366", "#8b7cff", "#fbbf24", "#38bdf8"],
+    context="notebook",
+    rc={
+        "figure.facecolor": "#111a2e",
+        "axes.facecolor": "#111a2e",
+        "axes.edgecolor": "#1f2b45",
+        "axes.labelcolor": "#8b9ac0",
+        "text.color": "#e8eefc",
+        "xtick.color": "#8b9ac0",
+        "ytick.color": "#8b9ac0",
+        "grid.color": "#1f2b45",
+    },
+)
+
+st.markdown(
+    """
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+    :root {
+        --page: #0b1220;
+        --card: #111a2e;
+        --border: #1f2b45;
+        --green: #25d366;
+        --violet: #8b7cff;
+        --amber: #fbbf24;
+        --sky: #38bdf8;
+        --text: #e8eefc;
+        --muted: #8b9ac0;
+    }
+    .stApp, [data-testid="stAppViewContainer"] {
+        background: var(--page);
+        color: var(--text);
+        font-family: Inter, sans-serif;
+    }
+    [data-testid="stHeader"], footer { display: none; }
+    [data-testid="stMainBlockContainer"] {
+        max-width: 1240px;
+        padding: 1.5rem 2rem 3rem;
+    }
+    h1, h2, h3, [data-testid="stMetricValue"] {
+        color: var(--text);
+        font-family: "Space Grotesk", Inter, sans-serif;
+    }
+    p, label, [data-testid="stCaptionContainer"] {
+        color: var(--muted);
+    }
+    [data-testid="stSidebar"] {
+        background: #0d1628;
+        border-right: 1px solid var(--border);
+    }
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+        color: var(--muted);
+    }
+    [data-testid="stFileUploader"] section {
+        background: var(--card);
+        border: 1px dashed #344567;
+        border-radius: 14px;
+    }
+    [data-testid="stFileUploader"] button,
+    [data-testid="stButton"] button {
+        background: var(--green);
+        color: #062312;
+        border: 0;
+        border-radius: 10px;
+        font-weight: 700;
+    }
+    [data-testid="stButton"] button:hover {
+        background: #42e47e;
+        color: #062312;
+        border: 0;
+    }
+    [data-testid="stSelectbox"] [data-baseweb="select"] > div,
+    [data-testid="stDataFrame"], [data-testid="stTable"] {
+        background: var(--card);
+        border-color: var(--border);
+    }
+    [data-testid="stMetric"] {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1rem 1.1rem;
+    }
+    [data-testid="stMetricLabel"] { color: var(--muted); }
+    [data-testid="stAlert"] { border-radius: 12px; }
+    .chatlens-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--border);
+        padding: .2rem 0 1.4rem;
+        margin-bottom: 3.2rem;
+    }
+    .chatlens-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--text);
+        font: 700 1.2rem "Space Grotesk", sans-serif;
+    }
+    .chatlens-mark {
+        width: 28px;
+        height: 24px;
+        border-radius: 8px;
+        background: var(--green);
+        display: inline-block;
+        position: relative;
+    }
+    .chatlens-mark:after {
+        content: "";
+        position: absolute;
+        left: 5px;
+        bottom: -4px;
+        border-width: 5px 5px 0 0;
+        border-style: solid;
+        border-color: var(--green) transparent transparent transparent;
+    }
+    .chatlens-mark:before {
+        content: "";
+        position: absolute;
+        left: 7px;
+        top: 6px;
+        width: 10px;
+        height: 7px;
+        border: 2px solid #0b1220;
+        border-radius: 4px;
+    }
+    .chatlens-nav {
+        color: var(--muted);
+        font: 500 .9rem Inter, sans-serif;
+        word-spacing: 1.5rem;
+    }
+    .hero-kicker {
+        color: var(--green);
+        font: 700 .82rem Inter, sans-serif;
+        letter-spacing: .13em;
+        text-transform: uppercase;
+        margin: .2rem 0 1rem;
+    }
+    .hero-title {
+        color: var(--text);
+        font: 700 clamp(2.8rem, 5vw, 4rem)/1.08 "Space Grotesk", sans-serif;
+        letter-spacing: -.045em;
+        margin: 0 0 1.4rem;
+    }
+    .hero-copy {
+        color: var(--muted);
+        font: 500 1.12rem/1.65 Inter, sans-serif;
+        max-width: 540px;
+        margin-bottom: 1.4rem;
+    }
+    .upload-hint {
+        color: var(--muted);
+        font-size: .9rem;
+        padding-top: .2rem;
+    }
+    .mood-card, .feature-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+    }
+    .mood-card {
+        padding: 1.25rem;
+        margin-top: 4.5rem;
+    }
+    .mood-top, .mood-bottom, .mood-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .mood-label { color: var(--muted); font-size: .9rem; }
+    .sample-pill {
+        background: #192641;
+        border-radius: 999px;
+        color: var(--text);
+        padding: .35rem .8rem;
+        font-size: .8rem;
+    }
+    .mood-positive {
+        color: var(--green);
+        font: 700 2rem "Space Grotesk", sans-serif;
+        margin: .5rem 0 1.1rem;
+    }
+    .mood-content { display: flex; align-items: center; gap: 1.5rem; }
+    .sentiment-ring {
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        background: conic-gradient(var(--green) 0 60%, var(--violet) 60% 85%, var(--amber) 85% 100%);
+        position: relative;
+        flex: 0 0 auto;
+    }
+    .sentiment-ring:after {
+        content: "";
+        position: absolute;
+        inset: 16px;
+        background: var(--card);
+        border-radius: 50%;
+    }
+    .mood-legend { color: var(--text); font-size: .9rem; line-height: 1.9; }
+    .mood-legend .positive { color: var(--green); }
+    .mood-legend .neutral { color: var(--violet); }
+    .mood-legend .negative { color: var(--amber); }
+    .mood-bottom { justify-content: flex-start; gap: .75rem; margin-top: 1.4rem; }
+    .sample-avatars { display: flex; }
+    .sample-avatar {
+        width: 32px;
+        height: 32px;
+        margin-right: -6px;
+        border: 2px solid var(--card);
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        color: #092116;
+        font-size: .68rem;
+        font-weight: 700;
+    }
+    .sample-avatar:nth-child(1) { background: var(--green); }
+    .sample-avatar:nth-child(2) { background: var(--violet); color: white; }
+    .sample-avatar:nth-child(3) { background: var(--amber); }
+    .mood-peak { color: var(--muted); font-size: .8rem; margin-left: .3rem; }
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.2rem;
+        margin-top: 3.2rem;
+    }
+    .feature-card { padding: 1.3rem; min-height: 124px; }
+    .feature-card h3 {
+        color: var(--text);
+        font: 700 1.15rem "Space Grotesk", sans-serif;
+        margin: 0 0 .55rem;
+    }
+    .feature-card p { margin: 0; color: var(--muted); line-height: 1.6; }
+    .sidebar-footer {
+        color: var(--muted);
+        font-size: .8rem;
+        position: fixed;
+        bottom: 1rem;
+        width: 220px;
+        padding-top: .8rem;
+        border-top: 1px solid var(--border);
+    }
+    @media (max-width: 760px) {
+        [data-testid="stMainBlockContainer"] { padding: 1rem 1rem 2rem; }
+        .chatlens-topbar { margin-bottom: 2rem; }
+        .chatlens-nav { display: none; }
+        .mood-card { margin-top: 1rem; }
+        .feature-grid { grid-template-columns: 1fr; margin-top: 1.5rem; }
+        .hero-title { font-size: 2.8rem; }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+theme.apply_theme()
+
+st.sidebar.markdown(
+    '<div class="chatlens-brand"><span class="chatlens-mark"></span>ChatLens</div>',
+    unsafe_allow_html=True,
+)
+uploaded_file = st.sidebar.file_uploader(
+    "Upload a WhatsApp chat",
+    type=["txt"],
+    help=UPLOAD_LIMIT_HELP,
+)
+st.sidebar.caption(UPLOAD_LIMIT_HELP)
 
 if uploaded_file is not None:
-    data = uploaded_file.getvalue().decode("utf-8")
+    chat_bytes = uploaded_file.getvalue()
+    st.session_state["chatlens_chat_bytes"] = chat_bytes
+    st.session_state["chatlens_chat_filename"] = uploaded_file.name
+    st.session_state["chatlens_demo_mode"] = False
+else:
+    chat_bytes = st.session_state.get("chatlens_chat_bytes")
+
+demo_mode = chat_bytes is None and st.session_state.get("chatlens_demo_mode", False)
+filename = st.session_state.get("chatlens_chat_filename", "")
+
+if chat_bytes is None and not demo_mode:
+    st.markdown(
+        """
+        <div class="chatlens-topbar">
+            <div class="chatlens-brand"><span class="chatlens-mark"></span>ChatLens</div>
+            <div class="chatlens-nav">Features&nbsp;&nbsp;&nbsp; Privacy</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    left, right = st.columns([1.08, 1], gap="large")
+    with left:
+        st.markdown(
+            """
+            <div class="hero-kicker">WhatsApp chat analytics with ML</div>
+            <div class="hero-title">Know your chats.<br>Predict what<br>comes next.</div>
+            <div class="hero-copy">
+                Upload an exported chat to see who talks most, how the mood
+                changes, and when your group will be most active.
+            </div>
+            <div style="color:#e8eefc;font-weight:600;margin-bottom:.3rem">
+                Drop your exported .txt here
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        landing_upload = st.file_uploader(
+            "Choose a WhatsApp .txt export",
+            type=["txt"],
+            label_visibility="collapsed",
+            key="chatlens_landing_upload",
+            help=UPLOAD_LIMIT_HELP,
+        )
+        st.markdown(
+            '<div class="upload-hint">Processed in memory, never saved.<br>'
+            'Maximum upload: 200 MB per file. Split larger exports before '
+            'uploading.</div>',
+            unsafe_allow_html=True,
+        )
+    with right:
+        st.markdown(
+            """
+            <div class="mood-card">
+                <div class="mood-top">
+                    <span class="mood-label">Mood this month</span>
+                    <span class="sample-pill">Sample</span>
+                </div>
+                <div class="mood-positive">Positive</div>
+                <div class="mood-content">
+                    <div class="sentiment-ring"></div>
+                    <div class="mood-legend">
+                        <div><b class="positive">60%</b> positive</div>
+                        <div><b class="neutral">25%</b> neutral</div>
+                        <div><b class="negative">15%</b> negative</div>
+                    </div>
+                </div>
+                <div class="mood-bottom">
+                    <div class="sample-avatars">
+                        <span class="sample-avatar">DK</span>
+                        <span class="sample-avatar">MH</span>
+                        <span class="sample-avatar">UM</span>
+                    </div>
+                    <span class="mood-peak">Predicted peak: Friday, 9 pm</span>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown(
+        """
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>Awards and stats</h3>
+                <p>Night owl, emoji king, fastest replier and more.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Sentiment analysis</h3>
+                <p>A model reads the mood of every member.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Activity forecast</h3>
+                <p>Find busy hours and see when the chat is most active.</p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    if st.button("Explore the demo with sample data", type="primary"):
+        st.session_state["chatlens_demo_mode"] = True
+        st.rerun()
+    st.sidebar.markdown(
+        '<div class="sidebar-footer">Built by Sandesh Kumar</div>',
+        unsafe_allow_html=True,
+    )
+    if landing_upload is not None:
+        st.session_state["chatlens_chat_bytes"] = landing_upload.getvalue()
+        st.session_state["chatlens_chat_filename"] = landing_upload.name
+        st.session_state["chatlens_demo_mode"] = False
+        st.rerun()
+    st.markdown(
+        """
+        <style>
+        [data-testid="stSidebar"] { display: none; }
+        [data-testid="stMainBlockContainer"] { padding-top: 1.25rem; }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.stop()
+
+st.sidebar.markdown(
+    '<div class="sidebar-footer">Built by Sandesh Kumar</div>',
+    unsafe_allow_html=True,
+)
+
+is_demo = demo_mode
+if demo_mode:
+    demo_data = extras.demo_dataframe()
+    chat_bytes = "\n".join(
+        f"{row.message_date} - {row.user}: {row.message}"
+        for row in demo_data.itertuples(index=False)
+    ).encode("utf-8")
+    filename = "Sample demo data"
+    demo_mode = False
+
+if not demo_mode:
     try:
-        df = preprocessor.preprocess(data)
+        with st.spinner("Preparing your chat..."):
+            data = chat_bytes.decode("utf-8")
+            df = extras.add_calendar_day(preprocessor.preprocess(data))
+    except UnicodeDecodeError:
+        st.error("Could not read this export as UTF-8. Please upload a WhatsApp .txt export.")
+        st.stop()
     except ValueError as error:
         st.error(f"Could not analyze this WhatsApp export: {error}")
         st.stop()
@@ -26,9 +445,19 @@ if uploaded_file is not None:
     user_list.sort()
     user_list.insert(0, 'Overall')
 
-    selected_user = st.sidebar.selectbox("👤 Choose a user", user_list)
+    pages.file_chip(filename, is_demo)
+    st.title("Your chat is ready")
+    st.caption(
+        f"{len(df):,} messages loaded. Choose a participant, then start the analysis."
+    )
+    selected_user = pages.user_selectors(user_list)
+    selected_page = pages.navigation()
 
-    if st.sidebar.button("✨ Show Analysis"):
+    if selected_page != "Existing analysis":
+        pages.render_page(selected_page, df, selected_user)
+        st.stop()
+
+    if st.button("Show Analysis"):
 
         st.header("🧾 Chat Summary")
         st.info(helper.chat_summary(selected_user, df))

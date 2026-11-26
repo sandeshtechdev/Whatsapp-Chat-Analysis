@@ -4,3 +4,4 @@ regex
 seaborn
 streamlit
 wordcloud
+vaderSentiment
