@@ -742,4 +742,4 @@ if not demo_mode:
         # ---------- 8. Most common words ----------
         st.header("🔤 Most Common Words")
         common_df = helper.most_common_words(selected_user, df)
-        st.dataframe(common_df) #changes are successful
+        st.dataframe(common_df) 
