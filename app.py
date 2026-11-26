@@ -9,7 +9,46 @@ st.set_page_config(page_title="WhatsApp Chat Analyzer", layout="wide")
 sns.set_theme(style='whitegrid', palette='deep', context='notebook')
 st.title("📊 WhatsApp Chat Analyzer")
 
-uploaded_file = st.sidebar.file_uploader("📂 Upload a WhatsApp chat", type=["txt"])
+sidebar_file = st.sidebar.file_uploader("📂 Upload a WhatsApp chat", type=["txt"])
+
+if sidebar_file is None:
+    st.markdown(
+        """
+        <div style="
+            background: linear-gradient(135deg, #25D36618, #128C7E18);
+            border: 2px dashed #25D366;
+            border-radius: 16px;
+            padding: 28px 24px;
+            margin: 12px 0 20px 0;
+            text-align: center;
+        ">
+            <h2 style="margin: 0 0 8px 0;">📂 Upload Your WhatsApp Chat (.txt)</h2>
+            <p style="margin: 0; font-size: 16px; opacity: 0.85;">
+                Drag and drop your exported WhatsApp chat file below, or click <b>Browse files</b> to get started.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    main_file = st.file_uploader(
+        "Choose a WhatsApp chat .txt file",
+        type=["txt"],
+        label_visibility="collapsed",
+        key="main_uploader",
+    )
+    with st.expander("ℹ️ How to export a WhatsApp chat (.txt)", expanded=False):
+        st.markdown(
+            """
+            1. Open **WhatsApp** on your phone and go to the chat or group you want to analyze.
+            2. Tap **⋮ (More)** → **Export chat** (or tap the contact/group name → **Export Chat** on iOS).
+            3. Choose **Without Media** to get a `.txt` file.
+            4. Upload that `.txt` file above, then click **✨ Show Analysis** in the sidebar.
+            """
+        )
+else:
+    main_file = None
+
+uploaded_file = sidebar_file or main_file
 
 if uploaded_file is not None:
     data = uploaded_file.getvalue().decode("utf-8")
