@@ -272,6 +272,20 @@ st.markdown(
         .feature-grid { grid-template-columns: 1fr; margin-top: 1.5rem; }
         .hero-title { font-size: 2.8rem; }
     }
+    @media (max-width: 1024px) {
+        .st-key-chatlens_responsive_navigation { display: block; }
+        [data-testid="stHeader"] {
+            display: flex;
+            background: var(--page);
+        }
+        [data-testid="stSidebarCollapsedControl"] {
+            display: flex !important;
+            visibility: visible !important;
+        }
+    }
+    @media (min-width: 1025px) {
+        .st-key-chatlens_responsive_navigation { display: none; }
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -404,6 +418,7 @@ if chat_bytes is None and not demo_mode:
         """
         <style>
         [data-testid="stSidebar"] { display: none; }
+        [data-testid="stHeader"] { display: none; }
         [data-testid="stMainBlockContainer"] { padding-top: 1.25rem; }
         </style>
         """,

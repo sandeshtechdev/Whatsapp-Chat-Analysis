@@ -26,16 +26,24 @@ ACCENTS = [theme.GREEN, theme.VIOLET, theme.AMBER, theme.SKY]
 def _set_navigation_page(selected: str):
     st.session_state["chatlens_current_page"] = selected
     st.session_state["chatlens_sidebar_page"] = selected
+    st.session_state["chatlens_main_page"] = selected
 
 
-def _sync_sidebar_page():
+def _remember_page_change(selected: str):
     previous = st.session_state["chatlens_current_page"]
-    selected = st.session_state["chatlens_sidebar_page"]
     if selected != previous:
         history = st.session_state.get("chatlens_page_history", [])
         history.append(previous)
         st.session_state["chatlens_page_history"] = history
     _set_navigation_page(selected)
+
+
+def _sync_sidebar_page():
+    _remember_page_change(st.session_state["chatlens_sidebar_page"])
+
+
+def _sync_main_page():
+    _remember_page_change(st.session_state["chatlens_main_page"])
 
 
 def _navigate_back():
@@ -51,6 +59,7 @@ def navigation() -> str:
         current = "Overview"
     st.session_state["chatlens_current_page"] = current
     st.session_state["chatlens_sidebar_page"] = current
+    st.session_state["chatlens_main_page"] = current
 
     st.sidebar.radio(
         "Navigation",
@@ -64,6 +73,23 @@ def navigation() -> str:
         disabled=not st.session_state.get("chatlens_page_history"),
         on_click=_navigate_back,
     )
+    with st.container(key="chatlens_responsive_navigation"):
+        back_column, page_column = st.columns([1, 3])
+        with back_column:
+            st.button(
+                "← Back",
+                key="chatlens_responsive_back",
+                disabled=not st.session_state.get("chatlens_page_history"),
+                on_click=_navigate_back,
+            )
+        with page_column:
+            st.selectbox(
+                "Navigate to a section",
+                PAGE_OPTIONS,
+                key="chatlens_main_page",
+                label_visibility="collapsed",
+                on_change=_sync_main_page,
+            )
     return st.session_state["chatlens_current_page"]
 
 
