@@ -8,6 +8,7 @@ import extras
 import ml
 import pages
 import theme
+from hide_badges import hide_badges
 
 UPLOAD_LIMIT_HELP = (
     "Maximum upload: 200 MB per .txt file. Split larger exports before uploading."
@@ -19,6 +20,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="auto",
 )
+hide_badges()
 sns.set_theme(
     style="darkgrid",
     palette=["#25d366", "#8b7cff", "#fbbf24", "#38bdf8"],
