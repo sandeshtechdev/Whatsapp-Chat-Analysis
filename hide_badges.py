@@ -70,4 +70,4 @@ def hide_badges():
         </script>
         """,
         height=0,
-    )
+    )#chnages are do i
