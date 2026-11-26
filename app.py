@@ -17,7 +17,7 @@ st.set_page_config(
     page_title="ChatLens",
     page_icon="💬",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="auto",
 )
 sns.set_theme(
     style="darkgrid",
@@ -56,7 +56,7 @@ st.markdown(
         color: var(--text);
         font-family: Inter, sans-serif;
     }
-    [data-testid="stHeader"], footer { display: none; }
+    footer { display: none; }
     [data-testid="stMainBlockContainer"] {
         max-width: 1240px;
         padding: 1.5rem 2rem 3rem;
@@ -69,7 +69,7 @@ st.markdown(
         color: var(--muted);
     }
     [data-testid="stSidebar"] {
-        background: #0d1628;
+        background: #0e1628;
         border-right: 1px solid var(--border);
     }
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
@@ -258,33 +258,15 @@ st.markdown(
     .sidebar-footer {
         color: var(--muted);
         font-size: .8rem;
-        position: fixed;
-        bottom: 1rem;
-        width: 220px;
         padding-top: .8rem;
         border-top: 1px solid var(--border);
     }
     @media (max-width: 760px) {
-        [data-testid="stMainBlockContainer"] { padding: 1rem 1rem 2rem; }
         .chatlens-topbar { margin-bottom: 2rem; }
         .chatlens-nav { display: none; }
         .mood-card { margin-top: 1rem; }
         .feature-grid { grid-template-columns: 1fr; margin-top: 1.5rem; }
         .hero-title { font-size: 2.8rem; }
-    }
-    @media (max-width: 1024px) {
-        .st-key-chatlens_responsive_navigation { display: block; }
-        [data-testid="stHeader"] {
-            display: flex;
-            background: var(--page);
-        }
-        [data-testid="stSidebarCollapsedControl"] {
-            display: flex !important;
-            visibility: visible !important;
-        }
-    }
-    @media (min-width: 1025px) {
-        .st-key-chatlens_responsive_navigation { display: none; }
     }
     </style>
     """,
@@ -414,16 +396,6 @@ if chat_bytes is None and not demo_mode:
         st.session_state["chatlens_chat_filename"] = landing_upload.name
         st.session_state["chatlens_demo_mode"] = False
         st.rerun()
-    st.markdown(
-        """
-        <style>
-        [data-testid="stSidebar"] { display: none; }
-        [data-testid="stHeader"] { display: none; }
-        [data-testid="stMainBlockContainer"] { padding-top: 1.25rem; }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
     st.stop()
 
 st.sidebar.markdown(
