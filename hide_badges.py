@@ -1,10 +1,10 @@
 import streamlit as st
+import streamlit.components.v1 as components
 
 
 def hide_badges():
-    """Hide Streamlit's viewer and profile badges without hiding app controls."""
-    # CSS injected into parent <head> via st.html (works on Streamlit Cloud)
-    st.html(
+    """Hide Streamlit Cloud badges/manage button on all screen sizes."""
+    st.markdown(
         """
         <style>
         [class*="viewerBadge"],
@@ -12,74 +12,69 @@ def hide_badges():
         [class*="_profilePreview"],
         [data-testid="stStatusWidget"],
         [data-testid="manage-app-button"],
+        [data-testid="stAppDeployButton"],
+        .stDeployButton,
         button[aria-label*="Manage"],
         button[title*="Manage"],
         [class*="manageApp"],
-        a[href*="streamlit.io/cloud"],
         a[href*="share.streamlit.io"] {
             display: none !important;
             visibility: hidden !important;
             pointer-events: none !important;
         }
         </style>
-        """
+        """,
+        unsafe_allow_html=True,
     )
 
-    # JS fallback for late-injected badges (runs in parent document only)
-    st.html(
+    components.html(
         """
         <script>
-        try {
-            const doc = document;
-            const appContent = [
-                '[data-testid="stMain"]',
-                '[data-testid="stMainBlockContainer"]',
-                '[data-testid="stAppViewBlockContainer"]',
-                '[data-testid="stSidebar"]'
-            ].join(",");
-
-            const hideBottomRight = () => {
-                for (const element of doc.querySelectorAll("body *")) {
-                    if (element.closest(appContent)) continue;
-
-                    const style = getComputedStyle(element);
-                    const bounds = element.getBoundingClientRect();
-                    const fixedBottomRight =
-                        style.position === "fixed" &&
-                        bounds.right >= window.innerWidth - 2 &&
-                        bounds.bottom >= window.innerHeight - 2;
-
-                    if (fixedBottomRight && style.display !== "none") {
-                        element.style.setProperty("display", "none", "important");
-                    }
-                }
-
-                const manageSelectors = [
-                    '[data-testid="manage-app-button"]',
-                    'button[aria-label*="Manage"]',
-                    'button[title*="Manage"]',
-                    '[class*="manageApp"]'
-                ];
-
-                manageSelectors.forEach(sel => {
-                    doc.querySelectorAll(sel).forEach(el => {
-                        el.style.setProperty("display", "none", "important");
-                        el.style.setProperty("visibility", "hidden", "important");
-                        el.style.setProperty("pointer-events", "none", "important");
+        (function() {
+            const selectors = [
+                '[class*="viewerBadge"]',
+                '[class*="_profileContainer"]',
+                '[class*="_profilePreview"]',
+                '[data-testid="stStatusWidget"]',
+                '[data-testid="manage-app-button"]',
+                '[data-testid="stAppDeployButton"]',
+                '.stDeployButton',
+                'button[aria-label*="Manage"]',
+                'button[title*="Manage"]',
+                '[class*="manageApp"]',
+                'a[href*="share.streamlit.io"]'
+            ];
+            const hideIn = (root) => {
+                selectors.forEach((sel) => {
+                    root.querySelectorAll(sel).forEach((el) => {
+                        el.style.setProperty('display', 'none', 'important');
+                        el.style.setProperty('visibility', 'hidden', 'important');
+                        el.style.setProperty('pointer-events', 'none', 'important');
                     });
                 });
             };
-
-            hideBottomRight();
-            new MutationObserver(hideBottomRight).observe(doc.documentElement, {
-                childList: true,
-                subtree: true,
-                attributes: true,
-                attributeFilter: ["class", "style"]
-            });
-        } catch (error) {
-            console.warn("Badge fallback cannot inspect the host page.", error);
-        }
+            const run = () => {
+                try { hideIn(document); } catch (e) {}
+                try {
+                    if (window.parent && window.parent !== window && window.parent.document) {
+                        hideIn(window.parent.document);
+                    }
+                } catch (e) {}
+            };
+            run();
+            setInterval(run, 1000);
+            [document, (() => { try { return window.parent.document; } catch (e) { return null; } })()]
+                .filter(Boolean)
+                .forEach((root) => {
+                    try {
+                        new MutationObserver(run).observe(root.documentElement, {
+                            childList: true, subtree: true, attributes: true
+                        });
+                    } catch (e) {}
+                });
+        })();
         </script>
-        """
+        """,
+        height=0,
+        width=0,
     )
