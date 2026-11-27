@@ -12,21 +12,11 @@ def hide_badges():
         [class*="_profilePreview"],
         [data-testid="stStatusWidget"],
         [data-testid="manage-app-button"],
-        [data-testid="stToolbar"],
-        [data-testid="stDecoration"],
-        [data-testid="stHeader"],
-        a[href*="streamlit.io"],
-        a[href*="streamlit.io"] img,
-        footer,
-        header,
-        [class^="_"][style*="position:fixed"][style*="right:0"][style*="bottom:0"],
-        [class^="_"][style*="position: fixed"][style*="right: 0"][style*="bottom: 0"],
-        /* Manage button and toolbar variants */
         button[aria-label*="Manage"],
         button[title*="Manage"],
         [class*="manageApp"],
-        [class*="toolbar"],
-        [class*="stToolbar"] {
+        a[href*="streamlit.io/cloud"],
+        a[href*="share.streamlit.io"] {
             display: none !important;
             visibility: hidden !important;
             pointer-events: none !important;
@@ -35,11 +25,10 @@ def hide_badges():
         """
     )
 
-    # JS fallback for late-injected badges (also runs in parent via st.html)
+    # JS fallback for late-injected badges (runs in parent document only)
     st.html(
         """
         <script>
-        // CSS cannot match computed fixed positioning, so watch for late badges.
         try {
             const doc = document;
             const appContent = [
@@ -64,20 +53,14 @@ def hide_badges():
                         element.style.setProperty("display", "none", "important");
                     }
                 }
-                
-                // Also hide manage button and toolbar by known selectors
+
                 const manageSelectors = [
                     '[data-testid="manage-app-button"]',
-                    '[data-testid="stToolbar"]',
-                    '[data-testid="stDecoration"]',
-                    '[data-testid="stHeader"]',
                     'button[aria-label*="Manage"]',
                     'button[title*="Manage"]',
-                    '[class*="manageApp"]',
-                    '[class*="toolbar"]',
-                    '[class*="stToolbar"]'
+                    '[class*="manageApp"]'
                 ];
-                
+
                 manageSelectors.forEach(sel => {
                     doc.querySelectorAll(sel).forEach(el => {
                         el.style.setProperty("display", "none", "important");
